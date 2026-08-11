@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: projetox-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: projetox
+      POSTGRES_USER: projetox
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ProjetoX2026!SecurePass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U projetox"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: projetox-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://projetox:${DB_PASSWORD:-ProjetoX2026!SecurePass}@postgres:5432/projetox?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-this-jwt-secret-in-production-min-32-chars}
+      JWT_EXPIRES_IN: 8h
+      QR_DOMAIN: ${QR_DOMAIN:-http://localhost}
+      UPLOADS_PATH: ./uploads
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-ProjetoX <ingressos@projetox.com.br>}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-webhook-secret-change-me}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+    container_name: projetox-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+    ports:
+      - "3000:3000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: projetox-proxy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads_data:/app/uploads:ro
+
+volumes:
+  postgres_data:
+  uploads_data:

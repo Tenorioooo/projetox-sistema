@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seu Ingresso — ProjetoX Neon Night — Edição São Paulo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #f3f4f6; padding: 20px 10px; }
+    .container { max-width: 600px; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(124, 58, 237, 0.4); }
+    .header { background: linear-gradient(135deg, #7C3AED, #EC4899); padding: 40px 32px; text-align: center; }
+    .header h1 { color: #fff; font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+    .header p { color: rgba(255,255,255,0.85); font-size: 14px; margin-top: 8px; }
+    .body { background: #12121f; padding: 32px; }
+    .ticket-card { background: #1a1a2e; border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+    .ticket-header { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(236,72,153,0.2)); padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .ticket-title { font-size: 22px; font-weight: 800; color: #fff; }
+    .ticket-type { display: inline-block; margin-top: 8px; padding: 4px 12px; background: linear-gradient(90deg, #7C3AED, #EC4899); border-radius: 20px; font-size: 12px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ticket-body { padding: 24px; display: flex; gap: 24px; align-items: flex-start; }
+    .ticket-info { flex: 1; }
+    .info-row { margin-bottom: 14px; }
+    .info-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; display: block; }
+    .info-value { font-size: 14px; color: #f3f4f6; font-weight: 600; display: block; margin-top: 2px; }
+    .qr-section { text-align: center; flex-shrink: 0; }
+    .qr-section img { width: 160px; height: 160px; border: 4px solid #fff; border-radius: 12px; display: block; }
+    .qr-label { font-size: 10px; color: #9ca3af; margin-top: 8px; text-transform: uppercase; font-weight: 600; }
+    .code-box { background: #0a0a0f; border: 1px dashed rgba(124,58,237,0.5); border-radius: 10px; padding: 12px 24px; text-align: center; margin: 0 24px 24px; }
+    .code-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; font-weight: 600; }
+    .code-value { font-size: 20px; font-weight: 900; color: #EC4899; letter-spacing: 3px; font-family: monospace; margin-top: 4px; }
+    .instructions { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+    .instructions h3 { color: #a78bfa; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .instructions ol { padding-left: 20px; }
+    .instructions li { font-size: 13px; color: #d1d5db; margin-bottom: 8px; line-height: 1.5; }
+    .warning { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 14px 20px; text-align: center; font-size: 12px; color: #fca5a5; margin-bottom: 24px; }
+    .footer { background: #0a0a0f; padding: 24px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
+    .footer p { font-size: 12px; color: #6b7280; line-height: 1.6; }
+    .footer a { color: #a78bfa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎟️ Seu Ingresso Chegou!</h1>
+      <p>Pedido confirmado · ORD-2026-987654321</p>
+    </div>
+
+    <div class="body">
+      <p style="font-size:15px; color:#d1d5db; margin-bottom:24px; line-height:1.7;">
+        Olá, <strong style="color:#fff;">Nicolas Gabriel</strong>! Seu ingresso para o evento abaixo está confirmado. Apresente o QR Code na portaria.
+      </p>
+
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <div class="ticket-title">ProjetoX Neon Night — Edição São Paulo</div>
+          <span class="ticket-type">Camarote Frontstage VIP</span>
+        </div>
+
+        <div class="ticket-body">
+          <div class="ticket-info">
+            <div class="info-row">
+              <span class="info-label">📅 Data & Hora</span>
+              <span class="info-value">Sábado, 24 de Outubro de 2026 às 23:00</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">📍 Local</span>
+              <span class="info-value">Expo Barra Funda</span>
+              <span style="font-size:12px; color:#9ca3af;">São Paulo - SP</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">👤 Titular</span>
+              <span class="info-value">Nicolas Gabriel</span>
+            </div>
+          </div>
+
+          <div class="qr-section">
+            <img src="data:image/png;base64,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" alt="QR Code do Ingresso">
+            <div class="qr-label">Escaneie na portaria</div>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <div class="code-label">Código Único do Ingresso</div>
+          <div class="code-value">PX-2026-F98A</div>
+        </div>
+      </div>
+
+      <div class="instructions">
+        <h3>📋 Instruções de uso</h3>
+        <ol>
+          <li>Salve este e-mail ou capture uma screenshot do QR Code.</li>
+          <li>Apareça no evento com o QR Code visível na tela do celular.</li>
+          <li>O código será lido pela portaria na entrada.</li>
+          <li>Cada QR Code é de uso único — não compartilhe com outras pessoas.</li>
+          <li>Documento de identidade com foto é <strong>obrigatório</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="warning">
+        ⚠️ <strong>Atenção:</strong> Evento estritamente +18 anos. Menores de idade não terão acesso mesmo com ingresso válido.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Dúvidas? Entre em contato via WhatsApp ou e-mail</p>
+      <p style="margin-top:8px;">
+        <a href="https://wa.me/5511999999999">WhatsApp</a> · 
+        <a href="mailto:suporte@projetox.com.br">suporte@projetox.com.br</a>
+      </p>
+      <p style="margin-top:16px; font-size:11px;">© 2026 ProjetoX Produções. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>

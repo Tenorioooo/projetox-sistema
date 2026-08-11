@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+model User {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                String   @default("OPERATOR") // ADMIN | OPERATOR
+  forcePasswordChange Boolean  @default(false)
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  checkinLogs CheckinLog[] @relation("OperatorLogs")
+  tickets     Ticket[]     @relation("CheckedInBy")
+
+  @@map("users")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String
+  bannerUrl   String?
+  location    String
+  address     String?
+  city        String
+  state       String?
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("DRAFT") // DRAFT | PUBLISHED | CANCELLED | FINISHED
+  capacity    Int      @default(0)
+  ageRating   Int      @default(18)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ticketTypes TicketType[]
+
+  @@map("events")
+}
+
+model TicketType {
+  id        String   @id @default(uuid())
+  eventId   String
+  name      String
+  price     Float
+  quantity  Int
+  sold      Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@map("ticket_types")
+}
+
+model Order {
+  id                String   @id @default(uuid())
+  buyerName         String
+  buyerEmail        String
+  buyerPhone        String
+  buyerCpf          String?
+  total             Float
+  paymentStatus     String   @default("PENDING") // PENDING | APPROVED | FAILED | REFUNDED
+  paymentMethod     String?
+  paymentExternalId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tickets Ticket[]
+
+  @@map("orders")
+}
+
+model Ticket {
+  id            String    @id @default(uuid())
+  orderId       String
+  ticketTypeId  String
+  code          String    @unique
+  qrToken       String    @unique
+  qrCodeUrl     String?
+  status        String    @default("VALID") // VALID | USED | CANCELLED
+  checkedInAt   DateTime?
+  checkedInById String?
+  emailSentAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  order       Order      @relation(fields: [orderId], references: [id])
+  ticketType  TicketType @relation(fields: [ticketTypeId], references: [id])
+  checkedInBy User?      @relation("CheckedInBy", fields: [checkedInById], references: [id])
+  checkinLogs CheckinLog[]
+
+  @@map("tickets")
+}
+
+model CheckinLog {
+  id         String   @id @default(uuid())
+  ticketId   String
+  operatorId String?
+  checkedAt  DateTime @default(now())
+  deviceInfo String?
+  ipAddress  String?
+  success    Boolean  @default(true)
+  message    String?
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  operator User?  @relation("OperatorLogs", fields: [operatorId], references: [id])
+
+  @@map("checkin_logs")
+}

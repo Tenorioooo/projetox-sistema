@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: projetox-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      # As variáveis abaixo devem ser configuradas no painel do Render:
+      # DATABASE_URL → Neon pooler URL
+      # DIRECT_URL   → Neon direct URL
+      # JWT_SECRET   → string secreta forte
+      # CORS_ORIGIN  → https://SEU-PROJETO.vercel.app
+      # QR_DOMAIN    → https://SEU-PROJETO.vercel.app

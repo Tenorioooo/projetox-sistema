@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresso Real Válido — ProjetoX Neon Night</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #f3f4f6; padding: 20px 10px; }
+    .container { max-width: 600px; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(34, 197, 94, 0.4); border: 2px solid #22C55E; }
+    .header { background: linear-gradient(135deg, #22C55E, #10B981); padding: 30px 24px; text-align: center; color: #000; }
+    .header h1 { font-size: 26px; font-weight: 900; }
+    .header p { font-size: 13px; font-weight: 700; margin-top: 4px; opacity: 0.9; }
+    .body { background: #12121f; padding: 24px; }
+    .ticket-card { background: #1a1a2e; border: 1px solid rgba(34,197,94,0.4); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+    .ticket-header { background: rgba(34,197,94,0.15); padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+    .ticket-title { font-size: 20px; font-weight: 800; color: #fff; }
+    .status-badge { padding: 4px 12px; background: #22C55E; border-radius: 20px; font-size: 11px; font-weight: 900; color: #000; uppercase; }
+    .ticket-body { padding: 20px; text-align: center; }
+    .qr-section img { width: 220px; height: 220px; border: 6px solid #fff; border-radius: 16px; display: block; margin: 0 auto; }
+    .qr-label { font-size: 12px; color: #22C55E; margin-top: 12px; font-weight: 800; uppercase; letter-spacing: 1px; }
+    .code-box { background: #0a0a0f; border: 1px dashed #22C55E; border-radius: 10px; padding: 12px; text-align: center; margin-top: 16px; }
+    .code-value { font-size: 22px; font-weight: 900; color: #EC4899; letter-spacing: 3px; font-family: monospace; }
+    .instructions { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 16px; font-size: 12px; color: #d1d5db; line-height: 1.6; }
+    .token-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; color: #34d399; word-break: break-all; margin-top: 10px; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✅ INGRESSO VÁLIDO NO BANCO DE DADOS</h1>
+      <p>Aponte a câmera da portaria digital para o QR Code abaixo</p>
+    </div>
+
+    <div class="body">
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <span class="ticket-title">ProjetoX Neon Night</span>
+          <span class="status-badge">STATUS: VÁLIDO</span>
+        </div>
+
+        <div class="ticket-body">
+          <div class="qr-section">
+            <img src="data:image/png;base64,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" alt="QR Code Válido">
+            <div class="qr-label">Aponte a Câmera da Portaria Aqui</div>
+          </div>
+
+          <div class="code-box">
+            <div style="font-size:10px; color:#9ca3af; font-weight:700;">CÓDIGO DO INGRESSO</div>
+            <div class="code-value">PX-2026-F2DAC3</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="instructions">
+        <strong>💡 Instruções de Teste:</strong>
+        <ol style="margin-left: 20px; margin-top: 8px;">
+          <li>Abra a portaria digital em: <a href="http://localhost:3000/admin/checkin" target="_blank" style="color:#34d399;">http://localhost:3000/admin/checkin</a></li>
+          <li>Ative a câmera e leia o QR Code acima.</li>
+          <li>Na <strong>1ª leitura</strong>: Exibirá <span style="color:#22C55E; font-weight:bold;">TELA VERDE (ENTRADA LIBERADA)</span>.</li>
+          <li>Na <strong>2ª leitura</strong>: Exibirá <span style="color:#EF4444; font-weight:bold;">TELA VERMELHA (INGRESSO JÁ UTILIZADO)</span>.</li>
+        </ol>
+
+        <div style="margin-top: 14px; font-weight: bold; color: #fff;">Token embutido no QR Code:</div>
+        <div class="token-box">4f0f223943e8c1497278b106b8a0c5bbfdd9458581b816aede9a37d47e7f68ca</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
