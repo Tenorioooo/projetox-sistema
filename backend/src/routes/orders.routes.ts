@@ -162,8 +162,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/orders/:id — Public: get order with tickets
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const orderId = req.params.id as string
     const order = await prisma.order.findUnique({
-      where: { id: req.params.id },
+      where: { id: orderId },
       include: {
         tickets: {
           include: {

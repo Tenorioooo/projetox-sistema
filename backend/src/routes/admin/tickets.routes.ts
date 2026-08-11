@@ -38,7 +38,8 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
 // PUT /api/admin/tickets/:id/cancel — Cancel a ticket
 router.put('/:id/cancel', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id } })
+    const ticketId = req.params.id as string
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
 
     if (!ticket) {
       res.status(404).json({ error: 'Ingresso não encontrado' })
@@ -51,7 +52,7 @@ router.put('/:id/cancel', authenticate, requireAdmin, async (req: Request, res: 
     }
 
     await prisma.ticket.update({
-      where: { id: req.params.id },
+      where: { id: ticketId },
       data: { status: 'CANCELLED' },
     })
 
@@ -64,8 +65,9 @@ router.put('/:id/cancel', authenticate, requireAdmin, async (req: Request, res: 
 // POST /api/admin/tickets/:id/resend-email — Resend ticket email
 router.post('/:id/resend-email', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const ticketId = req.params.id as string
     const ticket = await prisma.ticket.findUnique({
-      where: { id: req.params.id },
+      where: { id: ticketId },
       include: {
         order: true,
         ticketType: { include: { event: true } },
@@ -80,23 +82,25 @@ router.post('/:id/resend-email', authenticate, requireAdmin, async (req: Request
     const { generateTicketQRCodeBase64 } = await import('../../services/qrcode.service')
     const { sendTicketEmail } = await import('../../services/email.service')
 
-    const qrCodeBase64 = await generateTicketQRCodeBase64(ticket.qrToken)
+    const t = ticket as any
+
+    const qrCodeBase64 = await generateTicketQRCodeBase64(t.qrToken)
 
     await sendTicketEmail({
-      buyerName: ticket.order.buyerName,
-      buyerEmail: ticket.order.buyerEmail,
-      eventTitle: ticket.ticketType.event.title,
-      eventDate: ticket.ticketType.event.startDate.toLocaleString('pt-BR'),
-      eventLocation: ticket.ticketType.event.location,
-      eventCity: ticket.ticketType.event.city,
-      ticketTypeName: ticket.ticketType.name,
-      ticketCode: ticket.code,
+      buyerName: t.order.buyerName,
+      buyerEmail: t.order.buyerEmail,
+      eventTitle: t.ticketType.event.title,
+      eventDate: t.ticketType.event.startDate.toLocaleString('pt-BR'),
+      eventLocation: t.ticketType.event.location,
+      eventCity: t.ticketType.event.city,
+      ticketTypeName: t.ticketType.name,
+      ticketCode: t.code,
       qrCodeBase64,
-      orderId: ticket.orderId,
+      orderId: t.orderId,
     })
 
     await prisma.ticket.update({
-      where: { id: ticket.id },
+      where: { id: t.id },
       data: { emailSentAt: new Date() },
     })
 

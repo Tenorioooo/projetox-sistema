@@ -86,7 +86,7 @@ router.post('/', authenticate, requireAdmin, async (req: Request, res: Response,
 // PUT /api/admin/users/:id — Edit user details (email, password, role, active)
 router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.id
+    const userId = req.params.id as string
 
     // Prevent self-demotion or self-deactivation
     if (userId === req.user?.userId) {
@@ -147,7 +147,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Respons
 // DELETE /api/admin/users/:id — Permanently delete user
 router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.id
+    const userId = req.params.id as string
 
     if (userId === req.user?.userId) {
       res.status(400).json({ error: 'Você não pode excluir sua própria conta enquanto estiver logado' })

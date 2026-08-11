@@ -45,8 +45,9 @@ router.post('/', authenticate, requireAdmin, async (req: Request, res: Response,
 // PUT /api/ticket-types/:id
 router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const typeId = req.params.id as string
     const data = ticketTypeSchema.partial().parse(req.body)
-    const type = await prisma.ticketType.update({ where: { id: req.params.id }, data })
+    const type = await prisma.ticketType.update({ where: { id: typeId }, data })
     res.json(type)
   } catch (err) {
     next(err)
@@ -56,10 +57,11 @@ router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Respons
 // DELETE /api/ticket-types/:id
 router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const type = await prisma.ticketType.findUnique({ where: { id: req.params.id } })
+    const typeId = req.params.id as string
+    const type = await prisma.ticketType.findUnique({ where: { id: typeId } })
     if (!type) { res.status(404).json({ error: 'Não encontrado' }); return }
     if (type.sold > 0) { res.status(400).json({ error: 'Não é possível excluir lote com vendas' }); return }
-    await prisma.ticketType.delete({ where: { id: req.params.id } })
+    await prisma.ticketType.delete({ where: { id: typeId } })
     res.json({ message: 'Tipo de ingresso excluído' })
   } catch (err) {
     next(err)

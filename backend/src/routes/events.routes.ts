@@ -67,8 +67,9 @@ router.get('/admin/all', authenticate, requireAdmin, async (req: Request, res: R
 // GET /api/events/:slug — Public: single event by slug
 router.get('/:slug', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const slugParam = req.params.slug as string
     const event = await prisma.event.findUnique({
-      where: { slug: req.params.slug },
+      where: { slug: slugParam },
       include: {
         ticketTypes: {
           where: { active: true },
@@ -113,7 +114,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Respons
     const { ticketTypes, ...eventData } = req.body
     const data = eventSchema.partial().parse(eventData)
 
-    const eventId = req.params.id
+    const eventId = req.params.id as string
 
     // Update main event fields
     const updatedEvent = await prisma.event.update({
@@ -165,7 +166,7 @@ router.put('/:id', authenticate, requireAdmin, async (req: Request, res: Respons
 // DELETE /api/events/:id — Admin: delete event cleanly
 router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const eventId = req.params.id
+    const eventId = req.params.id as string
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -179,7 +180,7 @@ router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Resp
 
     // Delete associated checkin logs, tickets, ticket types, and event in transaction
     await prisma.$transaction(async (tx) => {
-      const ticketTypeIds = event.ticketTypes.map((tt) => tt.id)
+      const ticketTypeIds = (event as any).ticketTypes.map((tt: { id: string }) => tt.id)
 
       if (ticketTypeIds.length > 0) {
         // Find tickets
@@ -228,3 +229,4 @@ router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Resp
 })
 
 export default router
+
