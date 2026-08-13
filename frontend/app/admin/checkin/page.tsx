@@ -27,18 +27,28 @@ export default function PortariaCheckinPage() {
 
   const qrReaderRef = useRef<Html5Qrcode | null>(null);
 
-  const [authError, setAuthError] = useState(false);
+  const [cameraDevices, setCameraDevices] = useState<{ id: string; label: string }[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
     ensureAuth();
     fetchRecent();
+    loadCameras();
+
+    return () => {
+      if (qrReaderRef.current) {
+        try {
+          qrReaderRef.current.stop();
+        } catch (_) {}
+      }
+    };
   }, []);
 
   const ensureAuth = async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('projetox_token') : null;
     if (!token) {
       try {
-        // Auto-login as Portaria Operator for seamless testing
         const res = await api.post('/auth/login', {
           email: 'portaria@projetox.com',
           password: 'Operador123!',
@@ -46,11 +56,9 @@ export default function PortariaCheckinPage() {
         if (res.data?.token) {
           localStorage.setItem('projetox_token', res.data.token);
           localStorage.setItem('projetox_user', JSON.stringify(res.data.user));
-          setAuthError(false);
         }
       } catch (err) {
         console.error('Auto login portaria failed', err);
-        setAuthError(true);
       }
     }
   };
@@ -64,6 +72,35 @@ export default function PortariaCheckinPage() {
     }
   };
 
+  const loadCameras = async () => {
+    setCameraError(null);
+    try {
+      if (typeof window !== 'undefined' && navigator?.mediaDevices?.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream.getTracks().forEach((t) => t.stop());
+        } catch (_) {}
+      }
+
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        const formatted = devices.map((d, index) => ({
+          id: d.id,
+          label: d.label || `Câmera ${index + 1}`,
+        }));
+        setCameraDevices(formatted);
+
+        const backCam = formatted.find((d) => {
+          const l = d.label.toLowerCase();
+          return l.includes('back') || l.includes('traseira') || l.includes('rear') || l.includes('environment');
+        });
+        setSelectedCameraId(backCam ? backCam.id : formatted[0].id);
+      }
+    } catch (err: any) {
+      console.warn('Could not enumerate cameras:', err);
+    }
+  };
+
   const playFeedbackSound = (success: boolean) => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -74,19 +111,17 @@ export default function PortariaCheckinPage() {
       gain.connect(ctx.destination);
 
       if (success) {
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch success beep
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
       } else {
-        osc.frequency.setValueAtTime(220, ctx.currentTime); // Low pitch error buzz
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
         gain.gain.setValueAtTime(0.5, ctx.currentTime);
         osc.start();
         osc.stop(ctx.currentTime + 0.4);
       }
-    } catch (e) {
-      // AudioContext not allowed without interaction, fallback silent
-    }
+    } catch (_) {}
 
     if (navigator.vibrate) {
       navigator.vibrate(success ? [100, 50, 100] : [300, 100, 300]);
@@ -109,7 +144,6 @@ export default function PortariaCheckinPage() {
       fetchRecent();
     } catch (err: any) {
       if (err.response?.status === 403 || err.response?.status === 401) {
-        // Token missing or expired — re-login as operator and retry
         try {
           const authRes = await api.post('/auth/login', {
             email: 'portaria@projetox.com',
@@ -118,7 +152,6 @@ export default function PortariaCheckinPage() {
           if (authRes.data?.token) {
             localStorage.setItem('projetox_token', authRes.data.token);
             localStorage.setItem('projetox_user', JSON.stringify(authRes.data.user));
-            // Retry request
             const retryRes = await api.post('/checkin', { token: cleanToken });
             setLastResult(retryRes.data);
             playFeedbackSound(retryRes.data.success);
@@ -137,96 +170,111 @@ export default function PortariaCheckinPage() {
   };
 
   const startCamera = async () => {
+    setCameraError(null);
+
+    // Stop and cleanup existing scanner instance
+    if (qrReaderRef.current) {
+      try {
+        await qrReaderRef.current.stop();
+      } catch (_) {}
+      qrReaderRef.current = null;
+    }
+
+    // Clear DOM container before initializing
+    const container = document.getElementById('qr-reader');
+    if (container) {
+      container.innerHTML = '';
+    }
+
     try {
-      // 1. Force browser native permission popup on click
+      // 1. Force browser native permission prompt on click
       if (typeof window !== 'undefined' && navigator?.mediaDevices?.getUserMedia) {
         try {
           const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
           permissionStream.getTracks().forEach((track) => track.stop());
-        } catch (permissionErr) {
-          console.warn('getUserMedia permission request:', permissionErr);
+        } catch (permissionErr: any) {
+          if (permissionErr.name === 'NotAllowedError' || permissionErr.name === 'PermissionDeniedError') {
+            setCameraError('Permissão negada. Clique no ícone de CÂMERA/CADEADO na barra do navegador e selecione "Permitir".');
+            return;
+          }
         }
-      }
-
-      if (qrReaderRef.current) {
-        try {
-          await qrReaderRef.current.stop();
-        } catch (_) {}
-        qrReaderRef.current = null;
       }
 
       const html5QrCode = new Html5Qrcode('qr-reader');
       qrReaderRef.current = html5QrCode;
 
-      // Responsive qrbox calculation prevents error when container width is smaller than 250px on mobile
+      // Responsive qrbox calculation
       const qrboxCalc = (viewfinderWidth: number, viewfinderHeight: number) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const boxSize = Math.max(160, Math.floor(minEdge * 0.75));
+        const boxSize = Math.max(150, Math.floor(minEdge * 0.75));
         return { width: boxSize, height: boxSize };
       };
 
       const qrConfig = { fps: 10, qrbox: qrboxCalc };
 
-      // Query available video devices
-      const devices = await Html5Qrcode.getCameras();
-
-      if (devices && devices.length > 0) {
-        // On mobile, prefer rear/back camera. On desktop, pick first available camera ID.
-        const backCamera = devices.find((d) => {
-          const label = d.label.toLowerCase();
-          return label.includes('back') || label.includes('traseira') || label.includes('rear') || label.includes('environment');
-        });
-        const cameraId = backCamera ? backCamera.id : devices[0].id;
-
-        await html5QrCode.start(
-          cameraId,
-          qrConfig,
-          (decodedText) => {
-            submitCheckin(decodedText);
-          },
-          () => {}
-        );
-      } else {
-        // Fallback to facingMode constraint if getCameras() returned empty
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          qrConfig,
-          (decodedText) => {
-            submitCheckin(decodedText);
-          },
-          () => {}
-        );
+      // Determine camera target
+      let cameraTarget: any = selectedCameraId;
+      if (!cameraTarget) {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          cameraTarget = devices[0].id;
+        } else {
+          cameraTarget = { facingMode: 'environment' };
+        }
       }
+
+      await html5QrCode.start(
+        cameraTarget,
+        qrConfig,
+        (decodedText) => {
+          submitCheckin(decodedText);
+        },
+        () => {}
+      );
 
       setScanning(true);
     } catch (err: any) {
-      console.error('Error starting camera:', err);
+      console.error('Primary camera start failed:', err);
 
-      // Secondary fallback: try facingMode user / default
+      // Attempt fallback with new instance
       try {
-        if (qrReaderRef.current) {
-          await qrReaderRef.current.start(
-            { facingMode: 'user' },
-            { fps: 10, qrbox: 180 },
-            (decodedText) => {
-              submitCheckin(decodedText);
-            },
-            () => {}
-          );
-          setScanning(true);
-          return;
-        }
-      } catch (fallbackErr) {
+        const container = document.getElementById('qr-reader');
+        if (container) container.innerHTML = '';
+
+        const fallbackQr = new Html5Qrcode('qr-reader');
+        qrReaderRef.current = fallbackQr;
+
+        await fallbackQr.start(
+          { facingMode: 'user' },
+          { fps: 10, qrbox: { width: 180, height: 180 } },
+          (decodedText) => {
+            submitCheckin(decodedText);
+          },
+          () => {}
+        );
+
+        setScanning(true);
+        return;
+      } catch (fallbackErr: any) {
         console.error('Fallback camera failed:', fallbackErr);
       }
 
-      alert(
-        'Não foi possível acessar a câmera.\n\n' +
-        'Dicas para solucionar:\n' +
-        '1. Permita o acesso à câmera nas configurações do navegador.\n' +
-        '2. Certifique-se de acessar via HTTPS (https://...).\n' +
-        '3. Feche outros aplicativos ou abas que estejam usando a câmera.'
-      );
+      // Friendly diagnostic messages
+      let msg = 'Não foi possível ativar a câmera.';
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        msg = 'Acesso negado à câmera. Por favor, permita o acesso à câmera nas configurações do seu navegador.';
+      } else if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
+        msg = 'A câmera está sendo usada por outro aplicativo (Zoom, Teams, OBS ou outra aba). Feche-o e tente novamente.';
+      } else if (err?.name === 'NotFoundError') {
+        msg = 'Nenhuma câmera detectada no seu dispositivo.';
+      } else if (typeof err === 'string') {
+        msg = err;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+
+      setCameraError(msg);
+      setScanning(false);
     }
   };
 
@@ -252,7 +300,8 @@ export default function PortariaCheckinPage() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
+      {/* Top Bar Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-white flex items-center gap-3">
             <i className="fa-solid fa-qrcode text-pink-500"></i> Portaria Digital
@@ -262,12 +311,13 @@ export default function PortariaCheckinPage() {
 
         <button
           onClick={scanning ? stopCamera : startCamera}
-          className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg ${
+          className={`w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 ${
             scanning
               ? 'bg-red-600 hover:bg-red-500 text-white'
               : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white glow-green'
           }`}
         >
+          <i className={`fa-solid ${scanning ? 'fa-video-slash' : 'fa-camera'}`}></i>
           {scanning ? 'Desativar Câmera' : 'Ativar Câmera'}
         </button>
       </div>
@@ -299,23 +349,74 @@ export default function PortariaCheckinPage() {
       {/* Scanner & Manual Input Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Camera Box */}
-        <div className="bg-brandCard p-6 rounded-3xl border border-white/10 text-center">
-          <h2 className="text-sm font-bold text-white mb-4">Leitor de Câmera</h2>
-          <div id="qr-reader" className="w-full h-64 bg-black rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
-            {!scanning && <span className="text-xs text-gray-500">Clique em "Ativar Câmera" para iniciar o scanner</span>}
+        <div className="bg-brandCard p-6 rounded-3xl border border-white/10 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <i className="fa-solid fa-video text-pink-400"></i> Leitor de Câmera
+            </h2>
+
+            {cameraDevices.length > 1 && (
+              <select
+                value={selectedCameraId}
+                onChange={(e) => setSelectedCameraId(e.target.value)}
+                className="bg-black/60 border border-white/15 text-[10px] text-white rounded-lg px-2 py-1 font-semibold focus:outline-none"
+              >
+                {cameraDevices.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    📷 {d.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Diagnostic Error Box */}
+          {cameraError && (
+            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-red-400">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+                <span>Atenção à Câmera</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">{cameraError}</p>
+              <button
+                onClick={startCamera}
+                className="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] uppercase rounded-xl transition-colors"
+              >
+                <i className="fa-solid fa-rotate-right mr-1"></i> Tentar Novamente & Permitir
+              </button>
+            </div>
+          )}
+
+          <div
+            id="qr-reader"
+            className="w-full h-64 bg-black rounded-2xl overflow-hidden border border-white/10 flex flex-col items-center justify-center p-4 text-center"
+          >
+            {!scanning && !cameraError && (
+              <div className="space-y-2">
+                <i className="fa-solid fa-camera-retro text-3xl text-pink-500/60 block"></i>
+                <span className="text-xs text-gray-400 block font-semibold">
+                  Clique em <strong className="text-white">"Ativar Câmera"</strong> para iniciar o scanner QR
+                </span>
+                <p className="text-[10px] text-gray-500">
+                  O navegador solicitará permissão para uso da webcam/câmera.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Manual Code Input */}
         <div className="bg-brandCard p-6 rounded-3xl border border-white/10 flex flex-col justify-between">
           <div>
-            <h2 className="text-sm font-bold text-white mb-2">Validação Manual por Código</h2>
+            <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+              <i className="fa-solid fa-keyboard text-purple-400"></i> Validação Manual por Código
+            </h2>
             <p className="text-xs text-gray-400 mb-4">Caso o celular do cliente esteja sem bateria ou com tela trincada, insira o token ou código textual do ingresso.</p>
 
             <form onSubmit={handleManualSubmit} className="space-y-3">
               <input
                 type="text"
-                placeholder="Cole o token ou código PX-2024-..."
+                placeholder="Cole o token ou código PX-2026-..."
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
                 className="w-full bg-black/60 border border-white/15 focus:border-pink-500 rounded-xl p-3.5 text-xs text-white focus:outline-none"
@@ -334,7 +435,9 @@ export default function PortariaCheckinPage() {
 
       {/* History Log Table */}
       <div className="bg-brandCard p-6 rounded-3xl border border-white/10 space-y-4">
-        <h2 className="text-base font-bold text-white">Últimas Leituras Realizadas</h2>
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <i className="fa-solid fa-list-check text-green-400"></i> Últimas Leituras Realizadas
+        </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-white/10 text-gray-400 uppercase font-semibold">
