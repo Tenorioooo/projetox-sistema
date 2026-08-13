@@ -138,27 +138,95 @@ export default function PortariaCheckinPage() {
 
   const startCamera = async () => {
     try {
+      if (qrReaderRef.current) {
+        try {
+          await qrReaderRef.current.stop();
+        } catch (_) {}
+        qrReaderRef.current = null;
+      }
+
       const html5QrCode = new Html5Qrcode('qr-reader');
       qrReaderRef.current = html5QrCode;
 
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          submitCheckin(decodedText);
-        },
-        () => {}
-      );
+      // Responsive qrbox calculation prevents error when container width is smaller than 250px on mobile
+      const qrboxCalc = (viewfinderWidth: number, viewfinderHeight: number) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const boxSize = Math.max(160, Math.floor(minEdge * 0.75));
+        return { width: boxSize, height: boxSize };
+      };
+
+      const qrConfig = { fps: 10, qrbox: qrboxCalc };
+
+      // Query available video devices
+      const devices = await Html5Qrcode.getCameras();
+
+      if (devices && devices.length > 0) {
+        // On mobile, prefer rear/back camera. On desktop, pick first available camera ID.
+        const backCamera = devices.find((d) => {
+          const label = d.label.toLowerCase();
+          return label.includes('back') || label.includes('traseira') || label.includes('rear') || label.includes('environment');
+        });
+        const cameraId = backCamera ? backCamera.id : devices[0].id;
+
+        await html5QrCode.start(
+          cameraId,
+          qrConfig,
+          (decodedText) => {
+            submitCheckin(decodedText);
+          },
+          () => {}
+        );
+      } else {
+        // Fallback to facingMode constraint if getCameras() returned empty
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          qrConfig,
+          (decodedText) => {
+            submitCheckin(decodedText);
+          },
+          () => {}
+        );
+      }
+
       setScanning(true);
-    } catch (err) {
-      console.error(err);
-      alert('Não foi possível acessar a câmera. Verifique a permissão do navegador.');
+    } catch (err: any) {
+      console.error('Error starting camera:', err);
+
+      // Secondary fallback: try facingMode user / default
+      try {
+        if (qrReaderRef.current) {
+          await qrReaderRef.current.start(
+            { facingMode: 'user' },
+            { fps: 10, qrbox: 180 },
+            (decodedText) => {
+              submitCheckin(decodedText);
+            },
+            () => {}
+          );
+          setScanning(true);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback camera failed:', fallbackErr);
+      }
+
+      alert(
+        'Não foi possível acessar a câmera.\n\n' +
+        'Dicas para solucionar:\n' +
+        '1. Permita o acesso à câmera nas configurações do navegador.\n' +
+        '2. Certifique-se de acessar via HTTPS (https://...).\n' +
+        '3. Feche outros aplicativos ou abas que estejam usando a câmera.'
+      );
     }
   };
 
   const stopCamera = async () => {
     if (qrReaderRef.current) {
-      await qrReaderRef.current.stop();
+      try {
+        await qrReaderRef.current.stop();
+      } catch (e) {
+        console.error('Error stopping camera', e);
+      }
       qrReaderRef.current = null;
       setScanning(false);
     }
