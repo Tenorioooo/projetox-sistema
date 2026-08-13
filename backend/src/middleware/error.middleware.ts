@@ -39,10 +39,9 @@ export function errorMiddleware(
   }
 
   const statusCode = err.statusCode || 500
-  const message = statusCode === 500 ? 'Erro interno do servidor' : err.message
 
   res.status(statusCode).json({
-    error: message,
+    error: err.message || 'Erro interno do servidor',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })
 }
