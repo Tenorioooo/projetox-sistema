@@ -138,6 +138,16 @@ export default function PortariaCheckinPage() {
 
   const startCamera = async () => {
     try {
+      // 1. Force browser native permission popup on click
+      if (typeof window !== 'undefined' && navigator?.mediaDevices?.getUserMedia) {
+        try {
+          const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          permissionStream.getTracks().forEach((track) => track.stop());
+        } catch (permissionErr) {
+          console.warn('getUserMedia permission request:', permissionErr);
+        }
+      }
+
       if (qrReaderRef.current) {
         try {
           await qrReaderRef.current.stop();
