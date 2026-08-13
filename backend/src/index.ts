@@ -32,7 +32,7 @@ const allowedOrigins = corsOriginSetting.split(',').map((o) => o.trim())
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (mobile, curl), matching origins, vercel preview/prod deployments, or if '*' configured
       if (
         !origin ||
