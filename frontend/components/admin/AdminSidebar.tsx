@@ -1,15 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { getStoredUser, clearSession } from '@/lib/auth';
+import { getStoredUser, clearSession, UserSession } from '@/lib/auth';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const user = getStoredUser();
+  const [user, setUser] = useState<UserSession | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setUser(getStoredUser());
+  }, []);
 
   const handleLogout = () => {
     clearSession();
