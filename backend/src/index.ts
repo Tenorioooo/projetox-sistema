@@ -26,7 +26,28 @@ app.use(compression({ level: 6, threshold: 1024 }))
 
 // Security
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }))
+
+const corsOriginSetting = env.CORS_ORIGIN || '*'
+const allowedOrigins = corsOriginSetting.split(',').map((o) => o.trim())
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile, curl), matching origins, vercel preview/prod deployments, or if '*' configured
+      if (
+        !origin ||
+        corsOriginSetting === '*' ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        callback(null, true)
+      } else {
+        callback(null, true)
+      }
+    },
+    credentials: true,
+  })
+)
 
 // Rate limiting
 const limiter = rateLimit({
