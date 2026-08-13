@@ -263,112 +263,176 @@ export default function AdminEventsPage() {
           </button>
         </div>
       ) : (
-        <div className="bg-brandCard rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-black/60 border-b border-white/10 text-gray-400 uppercase font-semibold">
-                <tr>
-                  <th className="py-4 px-5">Evento & Banner</th>
-                  <th className="py-4 px-5">Cidade & Local</th>
-                  <th className="py-4 px-5">Data & Hora</th>
-                  <th className="py-4 px-5">Status</th>
-                  <th className="py-4 px-5">Lotes Registrados</th>
-                  <th className="py-4 px-5 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-gray-300">
-                {events.map((e) => (
-                  <tr key={e.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Title & Banner */}
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-black overflow-hidden flex-shrink-0 border border-white/10">
-                          <img
-                            src={e.bannerUrl || `/images/event_${e.slug.replace(/-/g, '_')}.png`}
-                            alt={e.title}
-                            className="w-full h-full object-cover"
-                            onError={(err) => {
-                              (err.target as HTMLElement).setAttribute('src', '/images/event_neon_night.png');
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <strong className="text-white text-sm font-black block">{e.title}</strong>
-                          <span className="text-[10px] text-gray-500 font-mono">/{e.slug}</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Location */}
-                    <td className="py-4 px-5">
-                      <span className="text-white font-semibold block">{e.location}</span>
-                      <span className="text-gray-400 text-[10px]">{e.city} - {e.state || 'SP'}</span>
-                    </td>
-
-                    {/* Date */}
-                    <td className="py-4 px-5">
-                      <span className="text-pink-400 font-bold block">
-                        {new Date(e.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
-                      <span className="text-gray-400 text-[10px]">
-                        {new Date(e.startDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}h
-                      </span>
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="py-4 px-5 font-bold">
-                      <span
-                        className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-wider ${
-                          e.status === 'PUBLISHED'
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : e.status === 'DRAFT'
-                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                            : e.status === 'CANCELLED'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                        }`}
-                      >
-                        {e.status}
-                      </span>
-                    </td>
-
-                    {/* Ticket Tiers */}
-                    <td className="py-4 px-5">
-                      {e.ticketTypes && e.ticketTypes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {e.ticketTypes.map((tt, idx) => (
-                            <span key={idx} className="bg-white/10 text-gray-200 px-2 py-0.5 rounded text-[10px] font-semibold">
-                              {tt.name}: {formatCurrency(tt.price)}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 text-[10px]">Sem lotes</span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-4 px-5 text-right space-x-2">
-                      <button
-                        onClick={() => openEditModal(e)}
-                        className="px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white rounded-xl border border-purple-500/30 font-bold transition-all"
-                        title="Editar Evento"
-                      >
-                        <i className="fa-solid fa-pen-to-square mr-1"></i> Editar
-                      </button>
-
-                      <button
-                        onClick={() => openDeleteModal(e)}
-                        className="px-3.5 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-xl border border-red-500/30 font-bold transition-all"
-                        title="Excluir Evento"
-                      >
-                        <i className="fa-solid fa-trash-can mr-1"></i> Excluir
-                      </button>
-                    </td>
+        <div className="space-y-4">
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-brandCard rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-black/60 border-b border-white/10 text-gray-400 uppercase font-semibold">
+                  <tr>
+                    <th className="py-4 px-5">Evento & Banner</th>
+                    <th className="py-4 px-5">Cidade & Local</th>
+                    <th className="py-4 px-5">Data & Hora</th>
+                    <th className="py-4 px-5">Status</th>
+                    <th className="py-4 px-5">Lotes Registrados</th>
+                    <th className="py-4 px-5 text-right">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-gray-300">
+                  {events.map((e) => (
+                    <tr key={e.id} className="hover:bg-white/[0.02] transition-colors">
+                      {/* Title & Banner */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-black overflow-hidden flex-shrink-0 border border-white/10">
+                            <img
+                              src={e.bannerUrl || `/images/event_${e.slug.replace(/-/g, '_')}.png`}
+                              alt={e.title}
+                              className="w-full h-full object-cover"
+                              onError={(err) => {
+                                (err.target as HTMLElement).setAttribute('src', '/images/event_neon_night.png');
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <strong className="text-white text-sm font-black block">{e.title}</strong>
+                            <span className="text-[10px] text-gray-500 font-mono">/{e.slug}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Location */}
+                      <td className="py-4 px-5">
+                        <span className="text-white font-semibold block">{e.location}</span>
+                        <span className="text-gray-400 text-[10px]">{e.city} - {e.state || 'SP'}</span>
+                      </td>
+
+                      {/* Date */}
+                      <td className="py-4 px-5">
+                        <span className="text-pink-400 font-bold block">
+                          {new Date(e.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                        <span className="text-gray-400 text-[10px]">
+                          {new Date(e.startDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}h
+                        </span>
+                      </td>
+
+                      {/* Status Badge */}
+                      <td className="py-4 px-5 font-bold">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-wider ${
+                            e.status === 'PUBLISHED'
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : e.status === 'DRAFT'
+                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                              : e.status === 'CANCELLED'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                          }`}
+                        >
+                          {e.status}
+                        </span>
+                      </td>
+
+                      {/* Ticket Tiers */}
+                      <td className="py-4 px-5">
+                        {e.ticketTypes && e.ticketTypes.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {e.ticketTypes.map((tt, idx) => (
+                              <span key={idx} className="bg-white/10 text-gray-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                                {tt.name}: {formatCurrency(tt.price)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-[10px]">Sem lotes</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right space-x-2">
+                        <button
+                          onClick={() => openEditModal(e)}
+                          className="px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white rounded-xl border border-purple-500/30 font-bold transition-all"
+                          title="Editar Evento"
+                        >
+                          <i className="fa-solid fa-pen-to-square mr-1"></i> Editar
+                        </button>
+
+                        <button
+                          onClick={() => openDeleteModal(e)}
+                          className="px-3.5 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-xl border border-red-500/30 font-bold transition-all"
+                          title="Excluir Evento"
+                        >
+                          <i className="fa-solid fa-trash-can mr-1"></i> Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Cards View */}
+          <div className="md:hidden space-y-4">
+            {events.map((e) => (
+              <div key={e.id} className="bg-brandCard p-4 rounded-2xl border border-white/10 space-y-3 shadow-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-black overflow-hidden flex-shrink-0 border border-white/10">
+                    <img
+                      src={e.bannerUrl || `/images/event_${e.slug.replace(/-/g, '_')}.png`}
+                      alt={e.title}
+                      className="w-full h-full object-cover"
+                      onError={(err) => {
+                        (err.target as HTMLElement).setAttribute('src', '/images/event_neon_night.png');
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <strong className="text-white text-base font-black block truncate">{e.title}</strong>
+                    <span className="text-[11px] text-gray-400 font-semibold flex items-center gap-1 mt-0.5">
+                      <i className="fa-solid fa-location-dot text-pink-500"></i> {e.location} ({e.city})
+                    </span>
+                    <span className="text-[11px] text-pink-400 font-bold block mt-0.5">
+                      <i className="fa-regular fa-clock mr-1"></i>
+                      {new Date(e.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às {new Date(e.startDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}h
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-wider ${
+                      e.status === 'PUBLISHED'
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : e.status === 'DRAFT'
+                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                        : e.status === 'CANCELLED'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    }`}
+                  >
+                    {e.status}
+                  </span>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditModal(e)}
+                      className="px-3 py-1.5 bg-purple-600/30 hover:bg-purple-600 text-purple-200 text-xs rounded-xl font-bold border border-purple-500/40"
+                    >
+                      <i className="fa-solid fa-pen-to-square mr-1"></i> Editar
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(e)}
+                      className="px-3 py-1.5 bg-red-600/30 hover:bg-red-600 text-red-200 text-xs rounded-xl font-bold border border-red-500/40"
+                    >
+                      <i className="fa-solid fa-trash-can mr-1"></i> Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

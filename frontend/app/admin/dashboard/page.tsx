@@ -244,52 +244,85 @@ export default function DashboardPage() {
           </div>
 
           {/* RECENT ORDERS TABLE */}
-          <div className="bg-brandCard p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <div className="bg-brandCard p-4 sm:p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <i className="fa-solid fa-receipt text-purple-400"></i> Pedidos Recentes
             </h2>
 
             {data.recentOrders.length === 0 ? (
               <p className="text-xs text-gray-500 py-6 text-center">Nenhum pedido encontrado para estes filtros.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-black/60 border-b border-white/10 text-gray-400 uppercase font-semibold">
-                    <tr>
-                      <th className="py-3 px-4">Comprador</th>
-                      <th className="py-3 px-4">Evento</th>
-                      <th className="py-3 px-4">Total</th>
-                      <th className="py-3 px-4">Método</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-gray-300">
-                    {data.recentOrders.map((o) => (
-                      <tr key={o.id} className="hover:bg-white/[0.02]">
-                        <td className="py-3 px-4 font-bold text-white">{o.buyerName}</td>
-                        <td className="py-3 px-4 text-purple-400 font-semibold">
-                          {o.tickets?.[0]?.ticketType?.event?.title || 'ProjetoX Evento'}
-                        </td>
-                        <td className="py-3 px-4 font-extrabold text-green-400">{formatCurrency(o.total)}</td>
-                        <td className="py-3 px-4 uppercase text-[10px] font-mono text-gray-400">{o.paymentMethod || 'PIX'}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                              o.paymentStatus === 'APPROVED'
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-yellow-500/20 text-yellow-400'
-                            }`}
-                          >
-                            {o.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">{new Date(o.createdAt).toLocaleString('pt-BR')}</td>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-black/60 border-b border-white/10 text-gray-400 uppercase font-semibold">
+                      <tr>
+                        <th className="py-3 px-4">Comprador</th>
+                        <th className="py-3 px-4">Evento</th>
+                        <th className="py-3 px-4">Total</th>
+                        <th className="py-3 px-4">Método</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Data</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-gray-300">
+                      {data.recentOrders.map((o) => (
+                        <tr key={o.id} className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-4 font-bold text-white">{o.buyerName}</td>
+                          <td className="py-3 px-4 text-purple-400 font-semibold">
+                            {o.tickets?.[0]?.ticketType?.event?.title || 'ProjetoX Evento'}
+                          </td>
+                          <td className="py-3 px-4 font-extrabold text-green-400">{formatCurrency(o.total)}</td>
+                          <td className="py-3 px-4 uppercase text-[10px] font-mono text-gray-400">{o.paymentMethod || 'PIX'}</td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                                o.paymentStatus === 'APPROVED'
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-yellow-500/20 text-yellow-400'
+                              }`}
+                            >
+                              {o.paymentStatus}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-400">{new Date(o.createdAt).toLocaleString('pt-BR')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="md:hidden space-y-3">
+                  {data.recentOrders.map((o) => (
+                    <div key={o.id} className="bg-black/50 p-4 rounded-2xl border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-white text-sm">{o.buyerName}</span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                            o.paymentStatus === 'APPROVED'
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          }`}
+                        >
+                          {o.paymentStatus}
+                        </span>
+                      </div>
+                      <div className="text-xs text-purple-400 font-semibold">
+                        {o.tickets?.[0]?.ticketType?.event?.title || 'ProjetoX Evento'}
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5 text-gray-400">
+                        <span>Valor: <strong className="text-green-400 font-black">{formatCurrency(o.total)}</strong></span>
+                        <span className="uppercase text-[10px] font-mono">{o.paymentMethod || 'PIX'}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500 text-right">
+                        {new Date(o.createdAt).toLocaleString('pt-BR')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </>
