@@ -73,7 +73,6 @@ export default function PortariaCheckinPage() {
   };
 
   const loadCameras = async () => {
-    setCameraError(null);
     try {
       if (typeof window !== 'undefined' && navigator?.mediaDevices?.getUserMedia) {
         try {
@@ -172,7 +171,7 @@ export default function PortariaCheckinPage() {
   const startCamera = async () => {
     setCameraError(null);
 
-    // Stop and cleanup existing scanner instance
+    // Stop existing instance if scanning
     if (qrReaderRef.current) {
       try {
         await qrReaderRef.current.stop();
@@ -180,45 +179,49 @@ export default function PortariaCheckinPage() {
       qrReaderRef.current = null;
     }
 
-    // Clear DOM container before initializing
-    const container = document.getElementById('qr-reader');
-    if (container) {
-      container.innerHTML = '';
-    }
-
     try {
-      // 1. Force browser native permission prompt on click
-      if (typeof window !== 'undefined' && navigator?.mediaDevices?.getUserMedia) {
-        try {
-          const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          permissionStream.getTracks().forEach((track) => track.stop());
-        } catch (permissionErr: any) {
-          if (permissionErr.name === 'NotAllowedError' || permissionErr.name === 'PermissionDeniedError') {
-            setCameraError('Permissão negada. Clique no ícone de CÂMERA/CADEADO na barra do navegador e selecione "Permitir".');
-            return;
-          }
+      // 1. Check if browser supports camera API
+      if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {
+        setCameraError('Seu navegador não possui suporte para uso da câmera.');
+        return;
+      }
+
+      // 2. Request media permissions natively
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err: any) {
+        if (err.name === 'NotFoundError' || err.message?.includes('Requested device not found')) {
+          setCameraError('Nenhuma câmera física detectada no seu computador. Você pode realizar o check-in normalmente digitando o código do ingresso no painel de Validação Manual.');
+          return;
+        }
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setCameraError('Permissão negada pelo navegador. Clique no ícone de CÂMERA/CADEADO na barra de endereço para PERMITIR a câmera.');
+          return;
         }
       }
 
       const html5QrCode = new Html5Qrcode('qr-reader');
       qrReaderRef.current = html5QrCode;
 
-      // Responsive qrbox calculation
-      const qrboxCalc = (viewfinderWidth: number, viewfinderHeight: number) => {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const boxSize = Math.max(150, Math.floor(minEdge * 0.75));
+      const qrboxCalc = (w: number, h: number) => {
+        const minEdge = Math.min(w, h);
+        const boxSize = Math.max(140, Math.floor(minEdge * 0.75));
         return { width: boxSize, height: boxSize };
       };
 
       const qrConfig = { fps: 10, qrbox: qrboxCalc };
 
-      // Determine camera target
       let cameraTarget: any = selectedCameraId;
       if (!cameraTarget) {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          cameraTarget = devices[0].id;
-        } else {
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            cameraTarget = devices[0].id;
+          } else {
+            cameraTarget = { facingMode: 'environment' };
+          }
+        } catch (_) {
           cameraTarget = { facingMode: 'environment' };
         }
       }
@@ -234,39 +237,15 @@ export default function PortariaCheckinPage() {
 
       setScanning(true);
     } catch (err: any) {
-      console.error('Primary camera start failed:', err);
+      console.error('Camera start failed:', err);
 
-      // Attempt fallback with new instance
-      try {
-        const container = document.getElementById('qr-reader');
-        if (container) container.innerHTML = '';
-
-        const fallbackQr = new Html5Qrcode('qr-reader');
-        qrReaderRef.current = fallbackQr;
-
-        await fallbackQr.start(
-          { facingMode: 'user' },
-          { fps: 10, qrbox: { width: 180, height: 180 } },
-          (decodedText) => {
-            submitCheckin(decodedText);
-          },
-          () => {}
-        );
-
-        setScanning(true);
-        return;
-      } catch (fallbackErr: any) {
-        console.error('Fallback camera failed:', fallbackErr);
-      }
-
-      // Friendly diagnostic messages
       let msg = 'Não foi possível ativar a câmera.';
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+      if (err?.name === 'NotFoundError' || err?.message?.includes('Requested device not found')) {
+        msg = 'Nenhuma câmera física detectada no seu dispositivo. Utilize a Validação Manual por Código no painel ao lado.';
+      } else if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
         msg = 'Acesso negado à câmera. Por favor, permita o acesso à câmera nas configurações do seu navegador.';
       } else if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
-        msg = 'A câmera está sendo usada por outro aplicativo (Zoom, Teams, OBS ou outra aba). Feche-o e tente novamente.';
-      } else if (err?.name === 'NotFoundError') {
-        msg = 'Nenhuma câmera detectada no seu dispositivo.';
+        msg = 'A câmera está sendo usada por outro aplicativo (Zoom, Teams, Discord ou outra aba). Feche-o e tente novamente.';
       } else if (typeof err === 'string') {
         msg = err;
       } else if (err?.message) {
@@ -372,17 +351,17 @@ export default function PortariaCheckinPage() {
 
           {/* Diagnostic Error Box */}
           {cameraError && (
-            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-red-400">
-                <i className="fa-solid fa-triangle-exclamation"></i>
-                <span>Atenção à Câmera</span>
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-amber-400">
+                <i className="fa-solid fa-circle-info"></i>
+                <span>Status da Câmera</span>
               </div>
               <p className="text-[11px] leading-relaxed">{cameraError}</p>
               <button
                 onClick={startCamera}
-                className="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] uppercase rounded-xl transition-colors"
+                className="w-full py-2 bg-amber-600/80 hover:bg-amber-500 text-white font-bold text-[11px] uppercase rounded-xl transition-colors"
               >
-                <i className="fa-solid fa-rotate-right mr-1"></i> Tentar Novamente & Permitir
+                <i className="fa-solid fa-rotate-right mr-1"></i> Tentar Novamente
               </button>
             </div>
           )}
@@ -411,7 +390,7 @@ export default function PortariaCheckinPage() {
             <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
               <i className="fa-solid fa-keyboard text-purple-400"></i> Validação Manual por Código
             </h2>
-            <p className="text-xs text-gray-400 mb-4">Caso o celular do cliente esteja sem bateria ou com tela trincada, insira o token ou código textual do ingresso.</p>
+            <p className="text-xs text-gray-400 mb-4">Caso o computador não possua webcam ou o cliente esteja sem bateria, insira o token ou código textual do ingresso abaixo.</p>
 
             <form onSubmit={handleManualSubmit} className="space-y-3">
               <input
@@ -424,7 +403,7 @@ export default function PortariaCheckinPage() {
               <button
                 type="submit"
                 disabled={processing}
-                className="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
+                className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-[1.02] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 shadow-lg glow-pink"
               >
                 {processing ? 'Validando...' : 'Validar Ingresso'}
               </button>
